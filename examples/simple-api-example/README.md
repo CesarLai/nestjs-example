@@ -1,6 +1,6 @@
 # simple-api-example
 
-RESTful API 示例。
+NestJS RESTful API 示例。
 
 ## 概述
 
