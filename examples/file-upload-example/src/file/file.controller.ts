@@ -6,10 +6,12 @@ import {
   UseInterceptors,
   UploadedFiles,
   Body,
-  Get,
-  Param,
+  UploadedFile,
 } from '@nestjs/common';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { UploadMultipleFilesDto } from './dto/upload-multiple-files.dto';
 import { FileService } from './file.service';
@@ -18,6 +20,22 @@ import { ResponseBody } from './models/response.model';
 @Controller('file')
 export class FileController {
   constructor(private readonly fileService: FileService) {}
+
+  /**
+   * 单文件上传接口
+   *
+   * 接收文件的字段名为 myFile
+   */
+  @Put('/single-file-upload')
+  @UseInterceptors(FileInterceptor('myFile'))
+  uploadSingleFile(
+    @UploadedFile() myFile: Express.Multer.File,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const fileInfo = this.fileService.uploadFile(req, myFile);
+    return res.json(new ResponseBody(0, fileInfo, 'success'));
+  }
 
   /**
    * 多文件上传接口示例
@@ -33,7 +51,7 @@ export class FileController {
    * doc: File[]
    * ```
    */
-  @Put('/multiple-files')
+  @Put('/multiple-files-upload')
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'images', maxCount: 5 },

@@ -11,15 +11,41 @@ import { getRandomString } from 'src/common/utils';
 export class FileService {
   constructor() {}
 
+  uploadFile(req: Request, file: Express.Multer.File, folder: string = '') {
+    // 检查静态文件目录是否存在
+    const folderPath = path.resolve(__dirname, '../static/', folder);
+    const staticFolderExist = fs.existsSync(folderPath);
+    !staticFolderExist && fs.mkdirSync(folderPath);
+
+    const baseUrl = `${req.protocol}://${req.headers.host || ''}`;
+    const ext = file.originalname.substring(file.originalname.lastIndexOf('.'));
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${getRandomString(8)}${ext}`;
+    fs.writeFileSync(path.resolve(folderPath, fileName), file.buffer);
+
+    const staticRoot = path.resolve(__dirname, '../static');
+    const relativePath = path.relative(
+      staticRoot,
+      path.resolve(staticRoot, folder, fileName),
+    );
+    const staticFileUrl = `${baseUrl}/static/${relativePath}`;
+
+    return {
+      fileName,
+      timestamp,
+      ext,
+      staticFileUrl,
+    };
+  }
+
   uploadMultipleFiles(
     req: Request,
     dto: UploadMultipleFilesDto,
     images: Express.Multer.File[],
     docs: Express.Multer.File[],
   ) {
-    const baseUrl = `${req.protocol}://${req.headers.host || ''}`;
-    const imageEntities = this.uploadImages(baseUrl, dto, images);
-    const docEntities = this.uploadDocs(baseUrl, dto, docs);
+    const imageEntities = this.uploadImages(req, dto, images);
+    const docEntities = this.uploadDocs(req, dto, docs);
     return {
       images: imageEntities,
       docs: docEntities,
@@ -27,25 +53,19 @@ export class FileService {
   }
 
   private uploadImages(
-    host: string,
+    req: Request,
     dto: UploadMultipleFilesDto,
     images: Express.Multer.File[],
   ): UploadEntity[] {
-    // 检查静态文件目录是否存在
-    const imageFolderPath = path.resolve(__dirname, '../static/images');
-    const staticFolderExist = fs.existsSync(imageFolderPath);
-    !staticFolderExist && fs.mkdirSync(imageFolderPath);
-
     return images.map<UploadEntity>((item) => {
-      const ext = item.originalname.substring(
-        item.originalname.lastIndexOf('.'),
+      const { ext, timestamp, fileName, staticFileUrl } = this.uploadFile(
+        req,
+        item,
+        'images',
       );
-      const timestamp = Date.now();
-      const fileName = `${timestamp}_${getRandomString(8)}${ext}`;
-      fs.writeFileSync(path.resolve(imageFolderPath, fileName), item.buffer);
 
       return {
-        url: `${host.replace(/\/$/, '')}/static/images/${fileName}`,
+        url: staticFileUrl,
         fileName,
         type: 'image',
         timestamp,
@@ -60,25 +80,19 @@ export class FileService {
   }
 
   private uploadDocs(
-    host: string,
+    req: Request,
     dto: UploadMultipleFilesDto,
     docs: Express.Multer.File[],
   ): UploadEntity[] {
-    // 检查静态文件目录是否存在
-    const docFolderPath = path.resolve(__dirname, '../static/docs');
-    const staticFolderExist = fs.existsSync(docFolderPath);
-    !staticFolderExist && fs.mkdirSync(docFolderPath);
-
     return docs.map<UploadEntity>((item) => {
-      const ext = item.originalname.substring(
-        item.originalname.lastIndexOf('.'),
+      const { ext, timestamp, fileName, staticFileUrl } = this.uploadFile(
+        req,
+        item,
+        'docs',
       );
-      const timestamp = Date.now();
-      const fileName = `${timestamp}_${getRandomString(8)}${ext}`;
-      fs.writeFileSync(path.resolve(docFolderPath, fileName), item.buffer);
 
       return {
-        url: `${host.replace(/\/$/, '')}/static/docs/${fileName}`,
+        url: staticFileUrl,
         fileName,
         type: 'doc',
         timestamp,
