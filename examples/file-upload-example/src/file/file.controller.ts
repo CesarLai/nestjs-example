@@ -48,7 +48,7 @@ export class FileController {
    * uploader: "tom"
    * email: "tom@gmail.com"
    * images: File[]
-   * doc: File[]
+   * docs: File[]
    * ```
    */
   @Put('/multiple-files-upload')
