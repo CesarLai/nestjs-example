@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SentMessageInfo } from 'nodemailer/lib/smtp-transport';
 import { Options as MailerOptions } from 'nodemailer/lib/mailer';
-import nodemailer, { Transporter } from 'nodemailer';
+import { createTransport, Transporter } from 'nodemailer';
 import smtpTransport from 'nodemailer-smtp-transport';
 
 import { checkCodeTemplate } from './email.template';
@@ -32,7 +32,7 @@ export class EmailProvider {
   init() {
     const envMap = getEnv();
 
-    this.transporter = nodemailer.createTransport(
+    this.transporter = createTransport(
       smtpTransport({
         host: envMap.SMTP_HOST,
         port: Number.parseInt(envMap.SMTP_PORT, 10),
